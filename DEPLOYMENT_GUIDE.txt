@@ -1,0 +1,223 @@
+================================================================================
+ FACE EMOTION & SIGN LANGUAGE RECOGNITION
+ DIPLOMA PROJECT — DEPLOYMENT & PUBLISHING GUIDE
+================================================================================
+
+This guide explains, step by step, how to run your Python project locally
+and how to publish it on the internet as a live website. Pick the option
+that best matches your needs (offline demo, free hosting, or full cloud
+production deployment).
+
+--------------------------------------------------------------------------------
+ CONTENTS
+--------------------------------------------------------------------------------
+ OPTION A — Run Locally (Desktop App, no internet required)
+ OPTION B — Docker Container (Portable, works WITHOUT internet after build)
+ OPTION C — Render.com (Free web hosting)
+ OPTION D — Heroku
+ OPTION E — Streamlit Community Cloud
+ OPTION F — Hugging Face Spaces
+ PRE-LAUNCH CHECKLIST
+ TROUBLESHOOTING
+
+--------------------------------------------------------------------------------
+ OPTION A — RUN LOCALLY (DESKTOP APP)
+--------------------------------------------------------------------------------
+Best for: testing, development, and offline diploma demonstrations.
+Requires internet only once, to install dependencies. After installation,
+runs fully OFFLINE.
+
+1. Install Python 3.10
+   MediaPipe and TensorFlow are most stable on Python 3.9 - 3.11.
+   Download from https://www.python.org if needed.
+
+2. Create and activate a virtual environment
+       python -m venv venv
+       source venv/bin/activate        (Windows: venv\Scripts\activate)
+
+3. Install dependencies
+       pip install -r requirements.txt
+
+4. Add your trained models
+   Place emotion_model.h5 and sign_model.pkl inside a "models/" folder.
+   Train them yourself with train_emotion_model.py / train_sign_model.py,
+   or supply your own files with the same names.
+
+5. Launch a detector (opens a live desktop window)
+       python emotion_detection.py
+       python sign_language_detection.py
+
+Once dependencies and models are present locally, both scripts run with
+NO internet connection required — perfect for a live diploma defense in a
+room without reliable Wi-Fi.
+
+--------------------------------------------------------------------------------
+ OPTION B — DOCKER (PORTABLE CONTAINER) — WORKS WITHOUT INTERNET
+--------------------------------------------------------------------------------
+Best for: a fully self-contained, portable deployment that keeps working
+even with NO internet access after the image has been built. Recommended
+for live demos on a laptop with no reliable network connection, as well as
+for deploying to any cloud provider later.
+
+1. Build the image (requires internet the first time, to download
+   dependencies)
+       docker build -t sign-emotion-app .
+
+2. Run the container completely offline
+       docker run -p 5000:5000 -e PORT=5000 sign-emotion-app
+
+   The Flask web app will be available at:
+       http://localhost:5000
+
+   IMPORTANT: Because all Python packages, system libraries (OpenCV,
+   MediaPipe, ffmpeg) and your trained models are baked into the Docker
+   image at build time, this container will keep running correctly with
+   NO internet connection at all once it has been built. This makes
+   Option B the recommended choice for live, offline diploma presentations.
+
+3. (Optional) Push to a registry for later cloud deployment
+       docker tag sign-emotion-app yourname/sign-emotion-app
+       docker push yourname/sign-emotion-app
+
+4. Deploy the image to the cloud later (optional)
+   Most cloud platforms (Render, Railway, Fly.io, AWS App Runner,
+   Azure Container Apps, Google Cloud Run) accept a Dockerfile or a
+   pushed container image directly.
+
+--------------------------------------------------------------------------------
+ OPTION C — RENDER.COM (FREE WEB HOSTING)
+--------------------------------------------------------------------------------
+Best for: a free, public URL for your Flask web app with automatic
+redeploys on every git push.
+
+1. Push your project to GitHub
+       git init
+       git add .
+       git commit -m "Diploma project: emotion + sign detection"
+       git branch -M main
+       git remote add origin https://github.com/<you>/sign-emotion-app.git
+       git push -u origin main
+
+2. Create a new Web Service
+   On render.com -> New -> Web Service -> connect your GitHub repo.
+   Render auto-detects the Dockerfile, or choose "Python" as the
+   environment.
+
+3. Configure the build & start command
+       Build Command: pip install -r requirements.txt
+       Start Command: gunicorn app_flask:app --bind 0.0.0.0:$PORT
+
+4. Set environment variables (if needed)
+   EMOTION_MODEL_PATH and SIGN_MODEL_PATH, if your model files live
+   somewhere other than ./models/.
+
+5. Deploy
+   Click "Create Web Service". Render builds and deploys automatically.
+   Every future git push redeploys the site. You will get a public URL
+   such as: https://sign-emotion-app.onrender.com
+
+--------------------------------------------------------------------------------
+ OPTION D — HEROKU
+--------------------------------------------------------------------------------
+1. Install the Heroku CLI and log in
+       heroku login
+
+2. Create the app
+       heroku create sign-emotion-app
+
+3. Confirm Procfile and runtime.txt are present
+   (Already included: Procfile runs gunicorn, runtime.txt pins the
+   Python version Heroku should build with.)
+
+4. Deploy
+       git push heroku main
+   Heroku installs requirements.txt automatically and starts the web
+   dyno from the Procfile.
+
+5. Open your live site
+       heroku open
+
+--------------------------------------------------------------------------------
+ OPTION E — STREAMLIT COMMUNITY CLOUD (FASTEST FREE PUBLIC LINK)
+--------------------------------------------------------------------------------
+1. Push your project to a public GitHub repo
+   Make sure streamlit_app.py, requirements.txt and your models/ folder
+   are included (or loaded at runtime).
+
+2. Go to https://share.streamlit.io
+   Sign in with GitHub, click "New app", and select your repository
+   and branch.
+
+3. Set the main file path
+       Main file path: streamlit_app.py
+
+4. Deploy
+   Streamlit Cloud installs requirements.txt and launches your app
+   automatically. You get a shareable URL such as:
+       https://<you>-sign-emotion.streamlit.app
+   This is ideal for your diploma defense demo, since the camera runs
+   in the visitor's own browser via WebRTC.
+
+--------------------------------------------------------------------------------
+ OPTION F — HUGGING FACE SPACES
+--------------------------------------------------------------------------------
+1. Create a new Space
+   On huggingface.co/spaces -> Create new Space -> choose SDK:
+   "Streamlit" (or "Docker" for the Flask app).
+
+2. Add your files
+       git lfs install
+       git lfs track "*.h5" "*.pkl"
+       git add .
+       git commit -m "Add project files"
+       git push
+   Use Git LFS for large model files (.h5 / .pkl).
+
+3. Spaces builds automatically
+   Hugging Face installs requirements.txt and starts the app. Your
+   project goes live at:
+       https://huggingface.co/spaces/<you>/<space-name>
+
+--------------------------------------------------------------------------------
+ PRE-LAUNCH CHECKLIST
+--------------------------------------------------------------------------------
+ [ ] Train or supply emotion_model.h5 and sign_model.pkl before deploying.
+ [ ] Keep dependency versions pinned (see requirements.txt) to avoid
+     build drift between your machine and the server.
+ [ ] Use HTTPS — all platforms above provide free TLS certificates
+     automatically.
+ [ ] If the host machine has no physical webcam, prefer the Streamlit /
+     WebRTC app so the visitor's own camera is used instead.
+ [ ] Add a custom domain through your platform's dashboard once the
+     diploma defense is complete.
+ [ ] Monitor the /api/health endpoint with a free uptime service (e.g.
+     UptimeRobot) to keep free-tier instances awake.
+ [ ] For a live, no-Wi-Fi defense room, use OPTION A or OPTION B — both
+     run fully offline once set up.
+
+--------------------------------------------------------------------------------
+ TROUBLESHOOTING
+--------------------------------------------------------------------------------
+ - "ModuleNotFoundError: mediapipe" / "tensorflow"
+       -> Re-run: pip install -r requirements.txt inside your active
+          virtual environment.
+
+ - OpenCV camera window does not open on a remote server
+       -> Desktop scripts (emotion_detection.py / sign_language_detection.py)
+          need a physical display and webcam. On servers, use app_flask.py
+          or streamlit_app.py instead (they stream video over HTTP/WebRTC).
+
+ - Docker build fails on OpenCV import ("libGL.so.1 not found")
+       -> Already handled in the provided Dockerfile via:
+          apt-get install libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg
+
+ - Free-tier host "sleeps" after inactivity
+       -> Use an uptime monitor (see checklist) or upgrade to a paid tier.
+
+ - Webcam access blocked in the browser (Streamlit/WebRTC version)
+       -> Make sure the site is served over HTTPS; browsers block camera
+          access on plain HTTP except on localhost.
+
+================================================================================
+ END OF GUIDE — Diploma Project 2026
+================================================================================
