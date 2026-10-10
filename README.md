@@ -1,0 +1,2 @@
+# Face_Emotion_Detect_2026
+Face_Emotion_Detect_2026 for diploma students
